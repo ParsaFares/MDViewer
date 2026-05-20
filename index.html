@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MDViewer — A beautiful, client-side markdown viewer for browsing local markdown files with syntax highlighting, search, and more.">
+  <title>MDViewer — Markdown Viewer</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Highlight.js Theme -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" id="hljs-theme-dark">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css" id="hljs-theme-light" disabled>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/index.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/markdown.css">
+  <link rel="stylesheet" href="css/print.css">
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+
+  <!-- App -->
+  <script type="module" src="js/app.js" defer></script>
+
+  <!-- Favicon (inline SVG data URI) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%238b5cf6'/><text x='50' y='68' font-size='52' font-weight='700' text-anchor='middle' fill='white' font-family='sans-serif'>M</text></svg>">
+</head>
+<body>
+  <div class="app" id="app">
+
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <header class="header" id="header">
+      <div class="header__controls">
+        <button class="header__btn header__btn--menu" id="mobile-menu-btn" aria-label="Toggle navigation" title="Toggle navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="header__logo">
+          <svg class="header__logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect width="24" height="24" rx="5" fill="var(--color-primary)"/>
+            <text x="12" y="17" font-size="14" font-weight="700" text-anchor="middle" fill="white" font-family="sans-serif">M</text>
+          </svg>
+          <span class="header__logo-text">MDViewer</span>
+        </div>
+      </div>
+
+      <div class="header__search" id="search-container">
+        <svg class="header__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="search"
+          class="header__search-input"
+          id="search-input"
+          placeholder="Search files… (Ctrl+K)"
+          autocomplete="off"
+          aria-label="Search markdown files"
+        >
+        <kbd class="header__kbd" style="position:absolute;inset-inline-end:0.75rem;inset-block-start:50%;transform:translateY(-50%);pointer-events:none;">⌘K</kbd>
+        <!-- Search Results Dropdown -->
+        <div class="search-results" id="search-results" hidden>
+          <div class="search-results__list" id="search-results-list"></div>
+          <div class="search-results__empty" id="search-results-empty" hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            <span>No results found</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header__controls">
+        <button class="header__btn" id="open-folder-btn" title="Open folder (Ctrl+O)" aria-label="Open folder">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+        </button>
+        <button class="header__btn" id="dir-toggle-btn" title="Toggle text direction (RTL/LTR)" aria-label="Toggle text direction">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5h6"/><path d="M13 5v14"/><path d="M17 5v14"/><path d="M6 13l-3 3 3 3"/><path d="M3 16h8"/>
+          </svg>
+        </button>
+        <button class="header__btn" id="theme-toggle-btn" title="Toggle theme (Ctrl+Shift+T)" aria-label="Toggle theme">
+          <!-- Moon icon (shown in dark mode) -->
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <!-- Sun icon (shown in light mode) -->
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="header__btn header__btn--toc" id="toc-toggle-btn" title="Toggle table of contents (Ctrl+\\)" aria-label="Toggle table of contents">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="17" y2="12"/><line x1="3" y1="18" x2="11" y2="18"/>
+            <circle cx="19" cy="6" r="1.5" fill="currentColor"/><circle cx="21" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="header__btn header__btn--sidebar" id="sidebar-toggle-btn" title="Toggle file tree (Ctrl+B)" aria-label="Toggle file tree sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══════════════ TABLE OF CONTENTS (Left Sidebar) ═══════════════ -->
+    <aside class="toc-panel" id="toc-panel">
+      <div class="toc-panel__header">
+        <h2 class="toc-panel__title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="17" y2="12"/><line x1="3" y1="18" x2="11" y2="18"/>
+          </svg>
+          On this page
+        </h2>
+      </div>
+      <nav class="toc-panel__content" id="toc-content" aria-label="Table of contents">
+        <p class="toc-panel__empty">Open a file to see its outline</p>
+      </nav>
+    </aside>
+
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <main class="content" id="content">
+      <!-- Landing state (shown when no folder is loaded) -->
+      <div class="landing" id="landing">
+        <div class="landing__icon">
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+            <rect width="80" height="80" rx="20" fill="url(#landing-gradient)"/>
+            <defs>
+              <linearGradient id="landing-gradient" x1="0" y1="0" x2="80" y2="80">
+                <stop offset="0%" stop-color="#8b5cf6"/>
+                <stop offset="100%" stop-color="#6d28d9"/>
+              </linearGradient>
+            </defs>
+            <text x="40" y="52" font-size="36" font-weight="700" text-anchor="middle" fill="white" font-family="sans-serif">M↓</text>
+          </svg>
+        </div>
+        <h1 class="landing__title">Welcome to MDViewer</h1>
+        <p class="landing__description">Open a folder containing markdown files to get started. Browse, search, and read your documentation with a beautiful viewer.</p>
+        <button class="landing__open-btn" id="landing-open-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+          Open Folder
+        </button>
+        <p class="landing__shortcut">
+          <kbd>Ctrl</kbd> + <kbd>O</kbd> to open a folder
+        </p>
+      </div>
+
+      <!-- Markdown render target (hidden until a file is loaded) -->
+      <article class="markdown-body" id="markdown-body" dir="auto" hidden>
+      </article>
+    </main>
+
+    <!-- ═══════════════ FILE TREE SIDEBAR (Right) ═══════════════ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__header">
+        <h2 class="sidebar__title" id="sidebar-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          Files
+        </h2>
+      </div>
+      <div class="sidebar__content" id="sidebar-content">
+        <p class="sidebar__empty">No folder opened</p>
+      </div>
+    </aside>
+
+    <!-- ═══════════════ MOBILE OVERLAY ═══════════════ -->
+    <div class="overlay-backdrop" id="overlay" hidden></div>
+
+  </div>
+</body>
+</html>

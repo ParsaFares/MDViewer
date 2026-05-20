@@ -1,0 +1,34 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Node (in case someone runs npm)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Test data
+test-docs/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+web-guidance.txt

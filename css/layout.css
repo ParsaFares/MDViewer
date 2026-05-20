@@ -1,0 +1,840 @@
+/* ============================================================================
+   MDViewer — Layout (layout.css)
+   ============================================================================
+   App shell: header, sidebar, ToC panel, main content, landing, search,
+   toast, and responsive breakpoints.
+   ALL properties use CSS logical equivalents for RTL support.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   1. App Container — CSS Grid, Three Columns
+   ---------------------------------------------------------------------------- */
+.app {
+  display: grid;
+  grid-template-columns: var(--toc-width) 1fr var(--sidebar-width);
+  grid-template-rows: var(--header-height) 1fr;
+  grid-template-areas:
+    "header header header"
+    "toc    content sidebar";
+  min-block-size: 100dvh;
+  overflow: hidden;
+}
+
+/* Collapsed states — grid column collapse */
+.app.toc-collapsed {
+  grid-template-columns: 0 1fr var(--sidebar-width);
+}
+
+.app.sidebar-collapsed {
+  grid-template-columns: var(--toc-width) 1fr 0;
+}
+
+.app.toc-collapsed.sidebar-collapsed {
+  grid-template-columns: 0 1fr 0;
+}
+
+/* ----------------------------------------------------------------------------
+   2. Header — Sticky top bar, glassmorphism
+   ---------------------------------------------------------------------------- */
+.header {
+  grid-area: header;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  block-size: var(--header-height);
+  padding-inline: 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-block-end: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Logo area */
+.header__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--color-text);
+  user-select: none;
+}
+
+.header__logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: #ffffff;
+  font-size: 0.875rem;
+}
+
+/* Search bar — centered, glass background */
+.header__search {
+  flex: 1;
+  max-inline-size: 480px;
+  margin-inline: auto;
+  position: relative;
+}
+
+.header__search-input {
+  inline-size: 100%;
+  block-size: 36px;
+  padding-inline: 2.25rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.header__search-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.header__search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  outline: none;
+}
+
+.header__search-icon {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  pointer-events: none;
+}
+
+/* Controls group */
+.header__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.header__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.header__btn:hover {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+
+.header__btn:active {
+  transform: scale(0.95);
+}
+
+.header__btn.is-active {
+  color: var(--color-primary);
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+/* Keyboard shortcut badge */
+.header__kbd {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.375rem;
+  block-size: 20px;
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+
+/* ----------------------------------------------------------------------------
+   3. Sidebar (Right) — File tree panel
+   ---------------------------------------------------------------------------- */
+.sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-inline-start: 1px solid var(--glass-border);
+  overflow: hidden;
+  transition:
+    width var(--transition-normal),
+    opacity var(--transition-normal);
+}
+
+.app.sidebar-collapsed .sidebar {
+  inline-size: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+  border-block-end: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.sidebar__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar__collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-fast);
+}
+
+.sidebar__collapse-btn:hover {
+  background-color: var(--color-surface-elevated);
+}
+
+.sidebar__content {
+  flex: 1;
+  overflow-y: auto;
+  padding-inline: 0.5rem;
+  padding-block: 0.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+   4. Table of Contents (Left) — ToC panel
+   ---------------------------------------------------------------------------- */
+.toc-panel {
+  grid-area: toc;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-inline-end: 1px solid var(--glass-border);
+  overflow: hidden;
+  transition:
+    width var(--transition-normal),
+    opacity var(--transition-normal);
+}
+
+.app.toc-collapsed .toc-panel {
+  inline-size: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toc-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+  border-block-end: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.toc-panel__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toc-panel__collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-fast);
+}
+
+.toc-panel__collapse-btn:hover {
+  background-color: var(--color-surface-elevated);
+}
+
+.toc-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding-inline: 0.5rem;
+  padding-block: 0.5rem;
+}
+
+/* ToC link items */
+.toc-panel__link {
+  display: block;
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toc-panel__link:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface-elevated);
+}
+
+.toc-panel__link.is-active {
+  color: var(--color-primary);
+  background-color: rgba(139, 92, 246, 0.08);
+  font-weight: 500;
+}
+
+/* Indentation levels */
+.toc-panel__link[data-level="2"] { padding-inline-start: 1.25rem; }
+.toc-panel__link[data-level="3"] { padding-inline-start: 2rem; }
+.toc-panel__link[data-level="4"] { padding-inline-start: 2.75rem; }
+.toc-panel__link[data-level="5"] { padding-inline-start: 3.5rem; }
+.toc-panel__link[data-level="6"] { padding-inline-start: 4.25rem; }
+
+/* ----------------------------------------------------------------------------
+   5. Main Content — Center panel
+   ---------------------------------------------------------------------------- */
+.content {
+  grid-area: content;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-inline: 2rem;
+  padding-block: 2rem;
+}
+
+.content__inner {
+  max-inline-size: 800px;
+  margin-inline: auto;
+}
+
+/* ----------------------------------------------------------------------------
+   6. Landing State — Welcome screen
+   ---------------------------------------------------------------------------- */
+.landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-block-size: calc(100dvh - var(--header-height) - 4rem);
+  padding-inline: 2rem;
+  padding-block: 2rem;
+  animation: fadeInUp 0.6s ease both;
+}
+
+.landing__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 80px;
+  block-size: 80px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(167, 139, 250, 0.08));
+  color: var(--color-primary);
+  font-size: 2rem;
+  margin-block-end: 1.5rem;
+}
+
+.landing__title {
+  font-size: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-block-end: 0.75rem;
+  text-wrap: balance;
+}
+
+.landing__description {
+  font-size: 1.0625rem;
+  color: var(--color-text-secondary);
+  max-inline-size: 420px;
+  margin-block-end: 2rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.landing__open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding-inline: 1.75rem;
+  padding-block: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  border-radius: 9999px;
+  box-shadow:
+    var(--shadow-md),
+    0 0 24px rgba(139, 92, 246, 0.25);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.landing__open-btn:hover {
+  transform: scale(1.04);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 40px rgba(139, 92, 246, 0.35);
+}
+
+.landing__open-btn:active {
+  transform: scale(0.98);
+}
+
+.landing__shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-block-start: 1rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* ----------------------------------------------------------------------------
+   7. Search Results Dropdown
+   ---------------------------------------------------------------------------- */
+.search-results {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-start: 0;
+  inline-size: 100%;
+  max-block-size: 400px;
+  overflow-y: auto;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  padding-block: 0.375rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.search-results.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.search-results__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-inline: 0.75rem;
+  padding-block: 0.5rem;
+  margin-inline: 0.375rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.search-results__item:hover,
+.search-results__item.is-focused {
+  background-color: var(--color-surface-elevated);
+}
+
+.search-results__item:active {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+.search-results__name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.search-results__path {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+
+.search-results__preview {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-results__preview mark {
+  background-color: rgba(139, 92, 246, 0.25);
+  color: var(--color-primary-hover);
+  border-radius: 2px;
+  padding-inline: 0.125rem;
+}
+
+.search-results__empty {
+  padding-inline: 1rem;
+  padding-block: 1.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* ----------------------------------------------------------------------------
+   8. Responsive Breakpoints
+   ---------------------------------------------------------------------------- */
+
+/* Tablet: reduce widths */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 220px;
+    --toc-width: 200px;
+  }
+}
+
+/* Mobile: sidebars become fixed overlays */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 280px;
+    --toc-width: 260px;
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--header-height) 1fr;
+    grid-template-areas:
+      "header"
+      "content";
+  }
+
+  /* Sidebar as fixed overlay */
+  .sidebar {
+    position: fixed;
+    inset-block-start: var(--header-height);
+    inset-inline-end: 0;
+    inset-block-end: 0;
+    inline-size: var(--sidebar-width);
+    z-index: 50;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    transition: transform var(--transition-normal);
+  }
+
+  /* RTL-aware transform for sidebar */
+  [dir="rtl"] .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .app:not(.sidebar-collapsed) .sidebar {
+    transform: translateX(0);
+  }
+
+  .app.sidebar-collapsed .sidebar {
+    inline-size: var(--sidebar-width);
+    opacity: 1;
+  }
+
+  /* ToC as fixed overlay */
+  .toc-panel {
+    position: fixed;
+    inset-block-start: var(--header-height);
+    inset-inline-start: 0;
+    inset-block-end: 0;
+    inline-size: var(--toc-width);
+    z-index: 50;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+  }
+
+  /* RTL-aware transform for ToC */
+  [dir="rtl"] .toc-panel {
+    transform: translateX(100%);
+  }
+
+  .app:not(.toc-collapsed) .toc-panel {
+    transform: translateX(0);
+  }
+
+  .app.toc-collapsed .toc-panel {
+    inline-size: var(--toc-width);
+    opacity: 1;
+  }
+
+  /* Overlay backdrop */
+  .overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+  }
+
+  .overlay-backdrop.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Content adjustments */
+  .content {
+    padding-inline: 1rem;
+    padding-block: 1.5rem;
+  }
+
+  .header__search {
+    max-inline-size: 280px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .header__search {
+    max-inline-size: 180px;
+  }
+
+  .header__logo span {
+    display: none;
+  }
+
+  .content {
+    padding-inline: 0.75rem;
+    padding-block: 1rem;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   9. Toast Notification — Copy confirmation
+   ---------------------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  inset-block-end: 1.5rem;
+  inset-inline-start: 50%;
+  transform: translateX(-50%) translateY(100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 1rem;
+  padding-block: 0.625rem;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  box-shadow: var(--shadow-lg);
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+/* RTL offset fix: toast uses inset-inline-start: 50% with translateX(-50%)
+   which is directionally correct for centering in both LTR and RTL */
+[dir="rtl"] .toast {
+  transform: translateX(50%) translateY(100%);
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+[dir="rtl"] .toast.is-visible {
+  transform: translateX(50%) translateY(0);
+}
+
+.toast__icon {
+  color: #10b981;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   10. Shared Animation Keyframes
+   ---------------------------------------------------------------------------- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   11. Additional Styles
+   ---------------------------------------------------------------------------- */
+
+/* Mobile menu button — hidden on desktop */
+.header__btn--menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .header__btn--menu {
+    display: inline-flex;
+  }
+}
+
+/* Landing kbd styles */
+.landing__shortcut kbd {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.375rem;
+  block-size: 22px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+
+/* Search empty state */
+.search-empty {
+  padding-inline: 1rem;
+  padding-block: 1.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* Search result file group */
+.search-result-file {
+  padding-block: 0.25rem;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.search-result-file:last-child {
+  border-block-end: none;
+}
+
+.search-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+}
+
+.search-result-icon {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  display: inline-flex;
+}
+
+.search-result-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.search-result-path {
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  margin-inline-start: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-match {
+  padding-inline: 0.75rem;
+  padding-block: 0.25rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  margin-inline: 0.375rem;
+  transition: background-color var(--transition-fast);
+}
+
+.search-result-match:hover {
+  background-color: var(--color-surface-elevated);
+}
+
+.search-result-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-linenum {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  min-inline-size: 2ch;
+  text-align: end;
+}
+
+.search-result-line mark {
+  background-color: rgba(139, 92, 246, 0.25);
+  color: var(--color-primary-hover);
+  border-radius: 2px;
+  padding-inline: 0.125rem;
+}
+
+/* Sidebar/ToC empty state */
+.sidebar__empty,
+.toc-panel__empty {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding-block: 2rem;
+  padding-inline: 1rem;
+}
+
+/* Markdown body fade-in */
+.markdown-body.fade-in {
+  animation: fadeInUp 0.35s ease both;
+}

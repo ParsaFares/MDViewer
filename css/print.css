@@ -1,0 +1,198 @@
+/* ============================================================================
+   MDViewer — Print Styles (print.css)
+   ============================================================================
+   Optimized print output: hides chrome, maximizes content area, ensures
+   readable text, preserves code blocks, and manages page breaks.
+   ============================================================================ */
+
+@media print {
+  /* --------------------------------------------------------------------------
+     1. Hide non-content elements
+     -------------------------------------------------------------------------- */
+  .header,
+  .sidebar,
+  .toc-panel,
+  .toast,
+  .search-results,
+  .landing,
+  .overlay-backdrop,
+  .code-block__copy,
+  .heading-anchor,
+  button {
+    display: none !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     2. Content — full width, no constraints
+     -------------------------------------------------------------------------- */
+  .app {
+    display: block;
+  }
+
+  .content {
+    max-inline-size: none;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+  }
+
+  .content__inner {
+    max-inline-size: none;
+  }
+
+  /* --------------------------------------------------------------------------
+     3. Markdown body — readable print colors
+     -------------------------------------------------------------------------- */
+  .markdown-body {
+    color: #000000;
+    background: #ffffff;
+    font-size: 12pt;
+    line-height: 1.6;
+    animation: none;
+  }
+
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4,
+  .markdown-body h5,
+  .markdown-body h6 {
+    color: #000000;
+  }
+
+  .markdown-body h1,
+  .markdown-body h2 {
+    border-block-end-color: #cccccc;
+  }
+
+  .markdown-body a {
+    color: #000000;
+    text-decoration: underline;
+  }
+
+  /* Show URL after link text */
+  .markdown-body a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #555555;
+    font-weight: 400;
+  }
+
+  /* Don't show URL for anchor links or empty hrefs */
+  .markdown-body a[href^="#"]::after,
+  .markdown-body a[href=""]::after {
+    content: none;
+  }
+
+  .markdown-body blockquote {
+    border-inline-start-color: #999999;
+    background: none;
+    color: #333333;
+  }
+
+  .markdown-body hr {
+    background: #cccccc;
+  }
+
+  /* --------------------------------------------------------------------------
+     4. Code blocks — preserve background, add border
+     -------------------------------------------------------------------------- */
+  .code-block {
+    background: #f5f5f5;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+  }
+
+  .code-block pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .code-block__lang {
+    background: #eeeeee;
+    color: #666666;
+  }
+
+  .markdown-body code {
+    background: #f0f0f0;
+    color: #333333;
+  }
+
+  .markdown-body pre code {
+    color: #000000;
+  }
+
+  /* --------------------------------------------------------------------------
+     5. Tables — visible borders for print
+     -------------------------------------------------------------------------- */
+  .markdown-body table {
+    border: 1px solid #cccccc;
+  }
+
+  .markdown-body thead th {
+    background: #f0f0f0;
+    border-block-end: 2px solid #999999;
+  }
+
+  .markdown-body tbody td {
+    border-block-end: 1px solid #dddddd;
+  }
+
+  .markdown-body tbody tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+
+  .markdown-body tbody tr:hover {
+    background: none;
+  }
+
+  /* --------------------------------------------------------------------------
+     6. Images — constrain for print
+     -------------------------------------------------------------------------- */
+  .markdown-body img {
+    max-inline-size: 100%;
+    box-shadow: none;
+    border: 1px solid #dddddd;
+  }
+
+  /* --------------------------------------------------------------------------
+     7. Page break rules
+     -------------------------------------------------------------------------- */
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4,
+  .markdown-body h5,
+  .markdown-body h6 {
+    break-after: avoid;
+  }
+
+  .code-block,
+  .markdown-body pre,
+  .markdown-body blockquote,
+  .markdown-body img,
+  .markdown-body table,
+  .markdown-body figure {
+    break-inside: avoid;
+  }
+
+  /* Ensure pages start cleanly */
+  .markdown-body h1 {
+    break-before: page;
+  }
+
+  /* First h1 should not force a page break */
+  .markdown-body > h1:first-child {
+    break-before: auto;
+  }
+
+  /* --------------------------------------------------------------------------
+     8. Disable transitions and animations
+     -------------------------------------------------------------------------- */
+  body,
+  .markdown-body,
+  .markdown-body > * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
