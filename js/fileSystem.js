@@ -80,7 +80,7 @@ export function getRootName() {
  * @returns {Promise<{ tree: TreeNode, files: Map<string, string> }>}
  */
 async function openWithNativeAPI() {
-  const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+  const dirHandle = await window.showDirectoryPicker();
   rootName = dirHandle.name;
 
   const tree = await walkDirectory(dirHandle, dirHandle.name);

@@ -19,6 +19,10 @@
   Open any folder of markdown files and browse them with premium typography, syntax highlighting, full-text search, and a gorgeous dark/light UI — all running entirely in your browser.
 </p>
 
+<p align="center">
+  <img src="screenshot.png" alt="MDViewer Screenshot" width="800">
+</p>
+
 ---
 
 ## ✨ Features

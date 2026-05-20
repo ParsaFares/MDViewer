@@ -48,33 +48,39 @@ let overlayEl;
 /* ------------------------------------------------------------------ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  /* Cache DOM references */
-  appEl = $('app');
-  contentEl = $('content');
-  markdownBodyEl = $('markdown-body');
-  landingEl = $('landing');
-  sidebarTitleEl = $('sidebar-title');
-  overlayEl = $('overlay');
+  try {
+    /* Cache DOM references */
+    appEl = $('app');
+    contentEl = $('content');
+    markdownBodyEl = $('markdown-body');
+    landingEl = $('landing');
+    sidebarTitleEl = $('sidebar-title');
+    overlayEl = $('overlay');
 
-  /* Initialise theme & direction from stored preferences */
-  initTheme();
-  initDirection();
-  updateThemeIcons();
+    /* Initialise theme & direction from stored preferences */
+    initTheme();
+    initDirection();
+    updateThemeIcons();
 
-  /* Initialise the markdown renderer (marked, mermaid, hljs) */
-  initRenderer();
+    /* Initialise the markdown renderer (marked, mermaid, hljs) */
+    initRenderer();
 
-  /* Attach inter-file link click handling on the content area */
-  attachLinkInterception(markdownBodyEl, handleInterFileLink);
+    /* Attach inter-file link click handling on the content area */
+    attachLinkInterception(markdownBodyEl, handleInterFileLink);
 
-  /* Wire up event listeners */
-  wireHeaderButtons();
-  wireLandingButton();
-  wireKeyboardShortcuts();
-  wireOverlay();
+    /* Wire up event listeners */
+    wireHeaderButtons();
+    wireLandingButton();
+    wireKeyboardShortcuts();
+    wireOverlay();
 
-  /* Start with both sidebars collapsed since no folder is loaded */
-  appEl.classList.add('toc-collapsed');
+    /* Start with both sidebars collapsed since no folder is loaded */
+    appEl.classList.add('toc-collapsed');
+
+    console.log('[MDViewer] Initialised successfully.');
+  } catch (err) {
+    console.error('[MDViewer] Initialisation failed:', err);
+  }
 });
 
 /* ------------------------------------------------------------------ */

@@ -28,6 +28,9 @@ let _collectedHeadings = [];
 /** Reference to the basePath passed into the current render call. */
 let _currentBasePath = '';
 
+/** Reference to the resolved marked library. */
+let _markedLib = null;
+
 /** Reference to the onLinkClick callback for the current render call. */
 let _currentOnLinkClick = null;
 
@@ -228,8 +231,26 @@ h6:hover .heading-anchor,
 export function initRenderer() {
   injectRendererStyles();
 
+  /* ---- Resolve the marked global ---- */
+  /* When loaded via UMD <script>, marked v12+ exposes everything directly
+     on window.marked (parse, Renderer, use, etc.). Guard in case the
+     global wraps another level (some bundler quirks). */
+  const _marked = (typeof marked !== 'undefined' && typeof marked.parse === 'function')
+    ? marked
+    : (typeof marked !== 'undefined' && typeof marked.marked === 'object')
+      ? marked.marked
+      : null;
+
+  if (!_marked) {
+    console.error('[MDViewer] marked library not found. Markdown rendering disabled.');
+    return;
+  }
+
+  /* Store at module level for use by renderMarkdown() */
+  _markedLib = _marked;
+
   /* ---- Custom marked renderer ---- */
-  const renderer = new marked.Renderer();
+  const renderer = new _markedLib.Renderer();
 
   renderer.heading = function ({ text, depth }) {
     const id = slugify(text);
@@ -283,22 +304,24 @@ export function initRenderer() {
     return `<img src="${resolved}" alt="${text}"${titleAttr} loading="lazy">`;
   };
 
-  /* ---- marked options ---- */
-  marked.setOptions({
+  /* ---- Apply renderer via marked.use() (modern API, v12+) ---- */
+  _markedLib.use({
     renderer,
     breaks: true,
     gfm: true,
   });
 
   /* ---- mermaid options ---- */
-  const currentTheme =
-    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'default';
+  if (typeof mermaid !== 'undefined') {
+    const currentTheme =
+      document.documentElement.dataset.theme === 'dark' ? 'dark' : 'default';
 
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: currentTheme,
-    securityLevel: 'loose',
-  });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: currentTheme,
+      securityLevel: 'loose',
+    });
+  }
 }
 
 /**
@@ -316,12 +339,17 @@ export function renderMarkdown(content, basePath, onLinkClick) {
   _currentOnLinkClick = onLinkClick || null;
 
   /* Parse markdown → HTML */
-  const rawHtml = marked.parse(content);
+  const rawHtml = _markedLib.parse(content);
 
   /* Sanitise the output while preserving custom attributes and SVG icons */
   const html = DOMPurify.sanitize(rawHtml, {
-    ADD_ATTR: ['data-md-link'],
-    ADD_TAGS: ['svg', 'path', 'use'],
+    ADD_ATTR: ['data-md-link', 'viewBox', 'xmlns', 'stroke', 'fill', 'stroke-width',
+               'stroke-linecap', 'stroke-linejoin', 'd', 'points', 'cx', 'cy', 'r',
+               'x', 'y', 'x1', 'x2', 'y1', 'y2', 'rx', 'ry', 'width', 'height',
+               'font-size', 'font-weight', 'text-anchor', 'font-family', 'loading',
+               'target', 'rel', 'aria-label'],
+    ADD_TAGS: ['svg', 'path', 'use', 'line', 'polyline', 'circle', 'rect', 'text',
+               'g', 'defs', 'linearGradient', 'stop', 'polygon', 'ellipse'],
   });
 
   const headings = [..._collectedHeadings];
