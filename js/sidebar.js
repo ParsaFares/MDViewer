@@ -58,8 +58,9 @@ function injectSidebarStyles() {
   align-items: center;
   gap: 0.4rem;
   width: 100%;
-  padding: 0.35rem 0.5rem;
-  padding-inline-start: calc(0.5rem + var(--depth, 0) * 1rem);
+  padding-block: 0.4rem;
+  padding-inline-end: 0.5rem;
+  padding-inline-start: calc(0.75rem + var(--depth, 0) * 1.25rem);
   background: none;
   border: none;
   border-radius: var(--radius-sm, 4px);
@@ -117,8 +118,9 @@ function injectSidebarStyles() {
   align-items: center;
   gap: 0.4rem;
   width: 100%;
-  padding: 0.35rem 0.5rem;
-  padding-inline-start: calc(0.5rem + var(--depth, 0) * 1rem);
+  padding-block: 0.4rem;
+  padding-inline-end: 0.5rem;
+  padding-inline-start: calc(0.75rem + var(--depth, 0) * 1.25rem);
   background: none;
   border: none;
   border-radius: var(--radius-sm, 4px);
@@ -152,6 +154,7 @@ function injectSidebarStyles() {
 .tree-item__toggle svg,
 .tree-item--file svg {
   flex-shrink: 0;
+  opacity: 0.8;
 }
 .tree-item__name {
   overflow: hidden;

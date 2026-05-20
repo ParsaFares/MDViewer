@@ -16,8 +16,7 @@
   grid-template-areas:
     "header header header"
     "toc    content sidebar";
-  min-block-size: 100dvh;
-  overflow: hidden;
+  min-block-size: 100vh;
 }
 
 /* Collapsed states — grid column collapse */
@@ -180,7 +179,9 @@
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
   border-inline-start: 1px solid var(--glass-border);
-  overflow: hidden;
+  position: sticky;
+  inset-block-start: var(--header-height);
+  block-size: calc(100vh - var(--header-height));
   transition:
     width var(--transition-normal),
     opacity var(--transition-normal);
@@ -243,7 +244,9 @@
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
   border-inline-end: 1px solid var(--glass-border);
-  overflow: hidden;
+  position: sticky;
+  inset-block-start: var(--header-height);
+  block-size: calc(100vh - var(--header-height));
   transition:
     width var(--transition-normal),
     opacity var(--transition-normal);
@@ -334,7 +337,6 @@
    ---------------------------------------------------------------------------- */
 .content {
   grid-area: content;
-  overflow-y: auto;
   overflow-x: hidden;
   padding-inline: 2rem;
   padding-block: 2rem;
@@ -354,10 +356,14 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  min-block-size: calc(100dvh - var(--header-height) - 4rem);
+  min-block-size: calc(100vh - var(--header-height) - 4rem);
   padding-inline: 2rem;
   padding-block: 2rem;
   animation: fadeInUp 0.6s ease both;
+}
+
+.landing[hidden] {
+  display: none !important;
 }
 
 .landing__icon {
@@ -439,10 +445,8 @@
   inline-size: 100%;
   max-block-size: 400px;
   overflow-y: auto;
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--glass-border);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 200;
