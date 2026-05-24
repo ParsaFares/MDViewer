@@ -55,7 +55,7 @@ function injectSidebarStyles() {
 /* ---- Toggle button (directory row) ---- */
 .tree-item__toggle {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4rem;
   width: 100%;
   padding-block: 0.4rem;
@@ -71,9 +71,8 @@ function injectSidebarStyles() {
   text-align: start;
   transition: background var(--transition-fast, 150ms) ease;
   user-select: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 .tree-item__toggle:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -86,6 +85,7 @@ function injectSidebarStyles() {
 /* Chevron rotation */
 .tree-item__toggle .tree-chevron {
   flex-shrink: 0;
+  margin-top: 2px;
   transition: transform var(--transition-fast, 150ms) ease;
 }
 .tree-item--expanded > .tree-item__toggle .tree-chevron {
@@ -115,12 +115,13 @@ function injectSidebarStyles() {
 /* ---- File button ---- */
 .tree-item--file {
   display: flex;
-  align-items: center;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 0.4rem;
   width: 100%;
   padding-block: 0.4rem;
   padding-inline-end: 0.5rem;
-  padding-inline-start: calc(0.75rem + var(--depth, 0) * 1.25rem);
+  padding-inline-start: calc(0.75rem + (var(--depth, 0) + 1) * 1.25rem);
   background: none;
   border: none;
   border-radius: var(--radius-sm, 4px);
@@ -131,9 +132,8 @@ function injectSidebarStyles() {
   text-align: start;
   transition: background var(--transition-fast, 150ms) ease,
               color var(--transition-fast, 150ms) ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 .tree-item--file:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -157,8 +157,8 @@ function injectSidebarStyles() {
   opacity: 0.8;
 }
 .tree-item__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* ========== Table of Contents ========== */
@@ -254,8 +254,6 @@ function createTreeNode(node, onFileSelect, depth = 0) {
 
     toggle.innerHTML =
       ICON_CHEVRON +
-      `<span class="icon-folder-closed">${ICON_FOLDER_CLOSED}</span>` +
-      `<span class="icon-folder-open">${ICON_FOLDER_OPEN}</span>` +
       `<span class="tree-item__name">${escapeHtml(node.name)}</span>`;
 
     toggle.addEventListener('click', () => {
@@ -292,7 +290,6 @@ function createTreeNode(node, onFileSelect, depth = 0) {
   btn.style.setProperty('--depth', depth);
 
   btn.innerHTML =
-    ICON_FILE +
     `<span class="tree-item__name">${escapeHtml(node.name)}</span>`;
 
   btn.addEventListener('click', () => {

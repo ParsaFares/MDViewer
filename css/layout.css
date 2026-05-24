@@ -226,6 +226,50 @@
   background-color: var(--color-surface-elevated);
 }
 
+.sidebar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.sidebar__btn:hover {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+
+.sidebar__btn:active {
+  transform: scale(0.92);
+}
+
+.sidebar__btn[hidden] {
+  display: none !important;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sidebar__btn.is-loading svg {
+  animation: spin 1s linear infinite;
+  pointer-events: none;
+}
+
 .sidebar__content {
   flex: 1;
   overflow-y: auto;

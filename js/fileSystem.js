@@ -13,6 +13,9 @@
 /*  Module-level state                                                 */
 /* ------------------------------------------------------------------ */
 
+/** @type {FileSystemDirectoryHandle|null} Active directory handle */
+let rootHandle = null;
+
 /** @type {Map<string, string>} path → file text content */
 let filesCache = new Map();
 
@@ -35,6 +38,14 @@ export function isFileSystemAccessSupported() {
 }
 
 /**
+ * Check whether a modern directory handle is currently active.
+ * @returns {boolean}
+ */
+export function hasDirectoryHandle() {
+  return rootHandle !== null;
+}
+
+/**
  * Open a directory and return its tree + file contents.
  *
  * @returns {Promise<{ tree: TreeNode, files: Map<string, string> }>}
@@ -47,11 +58,33 @@ export async function openDirectory() {
   /* Reset state for a fresh open */
   filesCache = new Map();
   rootName = '';
+  rootHandle = null;
 
   if (isFileSystemAccessSupported()) {
     return openWithNativeAPI();
   }
   return openWithFallbackInput();
+}
+
+/**
+ * Re-scan the active directory and return its updated tree + file contents.
+ * @returns {Promise<{ tree: TreeNode, files: Map<string, string> }>}
+ */
+export async function refreshDirectory() {
+  if (!rootHandle) {
+    throw new Error('No active directory handle to refresh.');
+  }
+
+  const hasPermission = await verifyPermission(rootHandle, false);
+  if (!hasPermission) {
+    throw new DOMException('Permission denied', 'NotAllowedError');
+  }
+
+  /* Clear the cache for a fresh scan */
+  filesCache = new Map();
+
+  const tree = await walkDirectory(rootHandle, rootHandle.name);
+  return { tree, files: filesCache };
 }
 
 /**
@@ -81,6 +114,7 @@ export function getRootName() {
  */
 async function openWithNativeAPI() {
   const dirHandle = await window.showDirectoryPicker();
+  rootHandle = dirHandle;
   rootName = dirHandle.name;
 
   const tree = await walkDirectory(dirHandle, dirHandle.name);
@@ -146,6 +180,7 @@ async function walkDirectory(dirHandle, path = '') {
  * @returns {Promise<{ tree: TreeNode, files: Map<string, string> }>}
  */
 function openWithFallbackInput() {
+  rootHandle = null;
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -309,4 +344,21 @@ function sortTreeRecursive(node) {
     sortChildren(node.children);
     node.children.forEach(sortTreeRecursive);
   }
+}
+
+/**
+ * Verify permission to access a directory handle.
+ * @param {FileSystemHandle} handle
+ * @param {boolean} readWrite
+ * @returns {Promise<boolean>}
+ */
+async function verifyPermission(handle, readWrite = false) {
+  const options = { mode: readWrite ? 'readwrite' : 'read' };
+  if ((await handle.queryPermission(options)) === 'granted') {
+    return true;
+  }
+  if ((await handle.requestPermission(options)) === 'granted') {
+    return true;
+  }
+  return false;
 }

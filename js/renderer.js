@@ -25,6 +25,9 @@ const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
 /** Temporary array used during a single renderMarkdown() call. */
 let _collectedHeadings = [];
 
+/** Raw mermaid diagram sources collected during a single renderMarkdown() call. */
+let _mermaidBlocks = [];
+
 /** Reference to the basePath passed into the current render call. */
 let _currentBasePath = '';
 
@@ -64,9 +67,20 @@ function highlightCode(code, lang) {
 }
 
 /**
+ * Simple HTML entity escaping helper.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/**
  * Show a brief toast notification near the bottom of the viewport.
  */
-function showToast(message) {
+export function showToast(message) {
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.textContent = message;
@@ -216,6 +230,35 @@ h6:hover .heading-anchor,
   border: 1px solid var(--color-border, rgba(255,255,255,0.08));
   overflow-x: auto;
 }
+
+/* ---- Mermaid error fallback ---- */
+.mermaid-error {
+  margin-block: 1.5rem;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  overflow: hidden;
+  background: var(--color-code-bg, #1e1e2e);
+}
+.mermaid-error__banner {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-family: var(--font-sans, sans-serif);
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border-block-end: 1px solid rgba(251, 191, 36, 0.15);
+}
+.mermaid-error pre {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+}
+.mermaid-error pre code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #94a3b8);
+  white-space: pre;
+}
 `;
   document.head.appendChild(style);
 }
@@ -262,9 +305,13 @@ export function initRenderer() {
   };
 
   renderer.code = function ({ text, lang }) {
-    /* Mermaid diagrams are rendered in a later pass */
+    /* Mermaid diagrams: store raw source and emit a placeholder.
+       The actual text is injected AFTER DOMPurify via injectMermaidContent()
+       so the sanitiser can never corrupt diagram syntax. */
     if (lang === 'mermaid') {
-      return `<div class="mermaid">${text}</div>`;
+      const idx = _mermaidBlocks.length;
+      _mermaidBlocks.push(text);
+      return `<div class="mermaid" data-mermaid-idx="${idx}"></div>`;
     }
 
     const highlighted = highlightCode(text, lang);
@@ -335,15 +382,18 @@ export function initRenderer() {
 export function renderMarkdown(content, basePath, onLinkClick) {
   /* Store render-scoped state for the custom renderer functions */
   _collectedHeadings = [];
+  _mermaidBlocks = [];
   _currentBasePath = basePath || '';
   _currentOnLinkClick = onLinkClick || null;
 
   /* Parse markdown → HTML */
   const rawHtml = _markedLib.parse(content);
 
-  /* Sanitise the output while preserving custom attributes and SVG icons */
+  /* Sanitise the output while preserving custom attributes and SVG icons.
+     data-mermaid-idx is needed so the placeholder <div> attributes survive. */
   const html = DOMPurify.sanitize(rawHtml, {
-    ADD_ATTR: ['data-md-link', 'viewBox', 'xmlns', 'stroke', 'fill', 'stroke-width',
+    ADD_ATTR: ['data-md-link', 'data-mermaid-idx',
+               'viewBox', 'xmlns', 'stroke', 'fill', 'stroke-width',
                'stroke-linecap', 'stroke-linejoin', 'd', 'points', 'cx', 'cy', 'r',
                'x', 'y', 'x1', 'x2', 'y1', 'y2', 'rx', 'ry', 'width', 'height',
                'font-size', 'font-weight', 'text-anchor', 'font-family', 'loading',
@@ -353,26 +403,74 @@ export function renderMarkdown(content, basePath, onLinkClick) {
   });
 
   const headings = [..._collectedHeadings];
+  const mermaidBlocks = [..._mermaidBlocks];
 
   /* Reset transient state */
   _collectedHeadings = [];
+  _mermaidBlocks = [];
   _currentBasePath = '';
 
-  return { html, headings };
+  return { html, headings, mermaidBlocks };
+}
+
+/**
+ * Inject raw mermaid diagram sources into placeholder elements.
+ * Must be called AFTER the sanitised HTML is set via innerHTML and
+ * BEFORE processMermaid().  This keeps the raw diagram text out of
+ * DOMPurify's reach entirely.
+ *
+ * @param {HTMLElement} containerEl   The element whose innerHTML was just set.
+ * @param {string[]}    mermaidBlocks Array of raw mermaid diagram strings.
+ */
+export function injectMermaidContent(containerEl, mermaidBlocks) {
+  if (!mermaidBlocks || mermaidBlocks.length === 0) return;
+
+  const placeholders = containerEl.querySelectorAll('.mermaid[data-mermaid-idx]');
+  placeholders.forEach((el) => {
+    const idx = parseInt(el.getAttribute('data-mermaid-idx'), 10);
+    if (idx >= 0 && idx < mermaidBlocks.length) {
+      el.textContent = mermaidBlocks[idx];
+    }
+    el.removeAttribute('data-mermaid-idx');
+  });
 }
 
 /**
  * Process mermaid diagrams that are already in the DOM.
- * Call after inserting the rendered HTML into the document.
+ * Each diagram is rendered individually so that a failure in one
+ * does not prevent the remaining diagrams from rendering.
+ * Failed diagrams are replaced with a styled code-block fallback.
  */
 export async function processMermaid() {
   const nodes = document.querySelectorAll('.mermaid');
   if (nodes.length === 0) return;
 
-  try {
-    await mermaid.run({ nodes });
-  } catch (err) {
-    console.error('[MDViewer] Mermaid rendering failed:', err);
+  for (const node of nodes) {
+    /* Save raw source BEFORE mermaid.run() — mermaid may clear the node on error */
+    const rawSource = node.textContent || '';
+
+    try {
+      await mermaid.run({ nodes: [node] });
+    } catch (err) {
+      console.warn('[MDViewer] Mermaid diagram failed, showing fallback:', err);
+
+      /* Build a fallback: error banner + raw source in a <pre> block */
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mermaid-error';
+
+      const banner = document.createElement('div');
+      banner.className = 'mermaid-error__banner';
+      banner.textContent = '⚠ Diagram could not be rendered (unsupported syntax)';
+
+      const pre = document.createElement('pre');
+      const code = document.createElement('code');
+      code.textContent = rawSource;
+      pre.appendChild(code);
+
+      wrapper.appendChild(banner);
+      wrapper.appendChild(pre);
+      node.replaceWith(wrapper);
+    }
   }
 }
 

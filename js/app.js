@@ -5,8 +5,8 @@
  * state, and implements keyboard shortcuts.
  */
 
-import { openDirectory, getFileContent, getRootName } from './fileSystem.js';
-import { initRenderer, renderMarkdown, processMermaid, setupCopyButtons, attachLinkInterception } from './renderer.js';
+import { openDirectory, getFileContent, getRootName, hasDirectoryHandle, refreshDirectory } from './fileSystem.js';
+import { initRenderer, renderMarkdown, processMermaid, injectMermaidContent, setupCopyButtons, attachLinkInterception, showToast } from './renderer.js';
 import { renderFileTree, setActiveFile, renderToC, initScrollSpy, destroyScrollSpy, filterFileTree, toggleSidebar, toggleToC } from './sidebar.js';
 import { initSearch, hideSearchResults, destroySearch } from './search.js';
 import { initTheme, toggleTheme, getTheme, initDirection, toggleDirection } from './theme.js';
@@ -91,6 +91,10 @@ function wireHeaderButtons() {
   /* Open folder */
   const openBtn = $('open-folder-btn');
   if (openBtn) openBtn.addEventListener('click', handleOpenFolder);
+
+  /* Refresh folder */
+  const refreshBtn = $('refresh-dir-btn');
+  if (refreshBtn) refreshBtn.addEventListener('click', handleRefreshDirectory);
 
   /* Theme toggle */
   const themeBtn = $('theme-toggle-btn');
@@ -200,6 +204,13 @@ function wireKeyboardShortcuts() {
       updateMermaidTheme();
       return;
     }
+
+    /* Ctrl/Cmd + Shift + R — Refresh directory */
+    if (isMeta && e.shiftKey && e.key === 'R') {
+      e.preventDefault();
+      handleRefreshDirectory();
+      return;
+    }
   });
 }
 
@@ -245,12 +256,81 @@ async function handleOpenFolder() {
     if (firstFilePath) {
       handleFileSelect(firstFilePath);
     }
+
+    /* Show refresh button */
+    const refreshBtn = $('refresh-dir-btn');
+    if (refreshBtn) refreshBtn.hidden = false;
   } catch (err) {
     if (err.name === 'AbortError') {
       /* User cancelled the folder picker — no action needed */
       return;
     }
     console.error('[MDViewer] Failed to open directory:', err);
+  }
+}
+
+/**
+ * Handle the directory refresh action.
+ * Re-scans the directory. If a handle is present, scans silently.
+ * Otherwise, triggers folder picker fallback.
+ */
+async function handleRefreshDirectory() {
+  const refreshBtn = $('refresh-dir-btn');
+  if (refreshBtn) refreshBtn.classList.add('is-loading');
+
+  try {
+    let result;
+    if (hasDirectoryHandle()) {
+      result = await refreshDirectory();
+    } else {
+      result = await openDirectory();
+    }
+
+    fileTree = result.tree;
+    filesMap = result.files;
+
+    /* Update sidebar title (in case it changed or for fallback root naming) */
+    if (sidebarTitleEl) {
+      sidebarTitleEl.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        ${escapeHtml(getRootName())}
+      `;
+    }
+
+    /* Render the updated file tree in the sidebar */
+    renderFileTree(fileTree, handleFileSelect);
+
+    /* Reinitialise search with new files map */
+    destroySearch();
+    initSearch(filesMap, handleSearchResultClick);
+
+    /* If the current file still exists in the new tree, re-render it to update content */
+    if (currentFilePath && filesMap.has(currentFilePath)) {
+      handleFileSelect(currentFilePath);
+    } else {
+      /* Otherwise, open the first file or show landing */
+      const firstFilePath = findFirstFile(fileTree);
+      if (firstFilePath) {
+        handleFileSelect(firstFilePath);
+      } else {
+        if (markdownBodyEl) markdownBodyEl.hidden = true;
+        if (landingEl) landingEl.hidden = false;
+        document.title = 'MDViewer — Markdown Viewer';
+      }
+    }
+
+    /* Show success toast */
+    showToast('Directory refreshed successfully!');
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return;
+    }
+    console.error('[MDViewer] Failed to refresh directory:', err);
+    showToast('Failed to refresh directory.');
+  } finally {
+    if (refreshBtn) refreshBtn.classList.remove('is-loading');
   }
 }
 
@@ -274,13 +354,16 @@ function handleFileSelect(filePath) {
   const basePath = parts.join('/');
 
   /* Render markdown to HTML */
-  const { html, headings } = renderMarkdown(content, basePath, handleInterFileLink);
+  const { html, headings, mermaidBlocks } = renderMarkdown(content, basePath, handleInterFileLink);
 
   /* Hide landing, show markdown body */
   if (landingEl) landingEl.hidden = true;
   if (markdownBodyEl) {
     markdownBodyEl.hidden = false;
     markdownBodyEl.innerHTML = html;
+
+    /* Inject raw mermaid sources into placeholder divs (bypasses DOMPurify) */
+    injectMermaidContent(markdownBodyEl, mermaidBlocks);
 
     /* Add fade-in animation */
     markdownBodyEl.classList.remove('fade-in');
